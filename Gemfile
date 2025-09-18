@@ -22,4 +22,7 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Set up enviroment from local .env file
+  gem "dotenv-rails"
 end
