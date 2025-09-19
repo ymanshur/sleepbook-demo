@@ -8,13 +8,15 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   # root "posts#index"
 
-  concern :api do
+  concern :api_base do
     resources :users
   end
 
   scope "/api" do
     namespace :v1 do
-      concerns :api
+      concerns :api_base
     end
   end
+
+  match "*a", to: "application#catch404", via: :all
 end
