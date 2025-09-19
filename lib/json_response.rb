@@ -5,6 +5,7 @@ class JsonResponse
     @success = options[:success]
     @message = options[:message]
     @data = options[:data]
+    @meta = options[:meta]
     @errors = options[:errors]
   end
 
@@ -13,7 +14,8 @@ class JsonResponse
       success:,
       message:,
       data:,
+      meta:,
       errors:
-  }.compact
+    }.compact
   end
 end
