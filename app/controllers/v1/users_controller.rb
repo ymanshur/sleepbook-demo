@@ -36,7 +36,7 @@ class V1::UsersController < ApplicationController
   def destroy
     @user.destroy!
 
-    render_success_response(data: @user, message: "User deleted successfully")
+    render_success_response(message: "User deleted successfully")
   end
 
   private
