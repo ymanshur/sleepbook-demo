@@ -34,6 +34,6 @@ class V1::User::SleepsControllerTest < ActionDispatch::IntegrationTest
       delete v1_user_sleep_url(@user, @user_sleep), as: :json
     end
 
-    assert_response :no_content
+    assert_response :success
   end
 end
