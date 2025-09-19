@@ -62,6 +62,20 @@ rails s
 
 The server will run by default on <http://localhost:3000>
 
+### Testing
+
+Run all tests
+
+```bash
+rails test
+```
+
+Run specific test file
+
+```bash
+rails test test/models/user_test.rb
+```
+
 ## RESTful API Endpoints
 
 The basic approach to implement RESTful APIs is to group endpoints based on main resources to at least fulfill the required business processes as MVPs to perform the necessary [functions](#functional-requirement).
