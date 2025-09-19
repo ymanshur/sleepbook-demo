@@ -5,37 +5,33 @@ class V1::UsersController < ApplicationController
   def index
     @users = User.all
 
-    render json: @users
+    render_success_response(data: @users, message: "Users fetched successfully")
   end
 
   # GET /users/1
   def show
-    render json: @user
+    render_success_response(data: @user, message: "User fetched successfully")
   end
 
   # POST /users
   def create
-    @user = User.new(user_params)
+    @user = User.create!(user_params)
 
-    if @user.save
-      render json: @user, status: :created, location: v1_user_url(@user)
-    else
-      render json: @user.errors, status: :unprocessable_entity
-    end
+    render_success_response(data: @user, message: "User created successfully", status: :created)
   end
 
   # PATCH/PUT /users/1
   def update
-    if @user.update(user_params)
-      render json: @user
-    else
-      render json: @user.errors, status: :unprocessable_entity
-    end
+    @user.update!(user_params)
+
+    render_success_response(data: @user, message: "User updated successfully")
   end
 
   # DELETE /users/1
   def destroy
     @user.destroy!
+
+    render_success_response(data: @user, message: "User deleted successfully")
   end
 
   private
