@@ -9,7 +9,9 @@ Rails.application.routes.draw do
   # root "posts#index"
 
   concern :api_base do
-    resources :users
+    resources :users do
+      resources :sleeps, controller: "user/sleeps"
+    end
   end
 
   scope "/api" do
