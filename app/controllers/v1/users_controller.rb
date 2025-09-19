@@ -3,9 +3,14 @@ class V1::UsersController < ApplicationController
 
   # GET /users
   def index
-    @users = User.all
+    @pagy, @users = pagy(User.all, **pagination_params)
 
-    render_success_response(data: @users, message: "Users fetched successfully")
+    render_pagy_response(
+      data: @users,
+      message: "Users fetched successfully",
+      status: :ok,
+      meta: pagy_metadata(@pagy)
+    )
   end
 
   # GET /users/1
