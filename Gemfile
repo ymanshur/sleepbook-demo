@@ -32,3 +32,6 @@ group :development do
   # code completion, and inline documentation
   gem "solargraph"
 end
+
+# Pagination#
+gem "pagy", "~> 9.4"
