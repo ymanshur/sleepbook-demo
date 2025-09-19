@@ -1,7 +1,8 @@
 class User::Sleep < ApplicationRecord
-  validates :start_time, presence: true
-
   belongs_to :user
+
+  validates :start_time, presence: true
+  validates :end_time, comparison: { greater_than: :start_time }, if: :end_time_present?
 
   before_save :set_duration
 
@@ -15,5 +16,9 @@ class User::Sleep < ApplicationRecord
     end
 
     self.duration = duration
+  end
+
+  def end_time_present?
+    end_time.present?
   end
 end
