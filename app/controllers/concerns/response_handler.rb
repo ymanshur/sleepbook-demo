@@ -9,7 +9,7 @@ module ResponseHandler
     json_response({
                     success: false,
                     message:,
-                    errors: error
+                    errors: error.is_a?(String) ? [ error.upcase_first ] : error
                   }, status)
   end
 
