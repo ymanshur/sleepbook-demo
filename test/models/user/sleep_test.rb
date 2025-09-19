@@ -12,4 +12,13 @@ class User::SleepTest < ActiveSupport::TestCase
     user_sleep.save
     assert_not_nil user_sleep.duration, "Saved the user sleep with nil duration"
   end
+
+  test "should set user sleep duration when end_time present" do
+    user = users(:one)
+    tnow = Time.current
+    duration = 8.hours
+    user_sleep = User::Sleep.new(user:, start_time: tnow, end_time: tnow + duration)
+    user_sleep.save
+    assert_equal duration, user_sleep.duration, "Saved the user sleep with uncorrect duration"
+  end
 end
