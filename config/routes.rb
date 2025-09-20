@@ -11,6 +11,7 @@ Rails.application.routes.draw do
   concern :api_base do
     resources :users do
       resources :sleeps, controller: "user/sleeps"
+      resources :followees, controller: "user/followees", except: [ :update ]
     end
   end
 
