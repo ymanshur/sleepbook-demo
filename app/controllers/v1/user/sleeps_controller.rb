@@ -1,4 +1,6 @@
 class V1::User::SleepsController < ApplicationController
+  wrap_parameters :user_sleep
+
   before_action :set_user
   before_action :set_user_sleep, only: %i[ show update destroy ]
 
@@ -43,7 +45,7 @@ class V1::User::SleepsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_user_sleep
-      @user_sleep = User::Sleep.find_by!(id: params.expect(:id), user_id: @user.id)
+      @user_sleep = @user.sleeps.find(params.expect(:id))
     end
 
     def set_user
@@ -52,6 +54,6 @@ class V1::User::SleepsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def user_sleep_params
-      params.expect(user_sleep: [ :start_time, :end_time ])
+      params.require(:user_sleep).permit(:start_time, :end_time)
     end
 end
