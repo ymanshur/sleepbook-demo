@@ -10,7 +10,7 @@ module ExceptionHandler
   rescue ActionController::RoutingError, ActiveRecord::RecordNotFound => e
     handle_not_found(e.message)
   rescue  ActiveRecord::RecordInvalid => e
-    handle_unprocessable_entity(e.record.errors.full_messages)
+    handle_unprocessable_content(e.record.errors.full_messages)
   rescue ActionDispatch::Http::Parameters::ParseError, ActionController::ParameterMissing => e
     handle_bad_request(e.message)
   rescue StandardError => e
@@ -25,8 +25,8 @@ module ExceptionHandler
     render_error_response(error, :not_found, "Not Found")
   end
 
-  def handle_unprocessable_entity(error)
-    render_error_response(error, :unprocessable_entity, "Unprocessable Content")
+  def handle_unprocessable_content(error)
+    render_error_response(error, :unprocessable_content, "Unprocessable Content")
   end
 
   def handle_bad_request(error)

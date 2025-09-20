@@ -1,7 +1,7 @@
 module ResponseHandler
   extend ActiveSupport::Concern
 
-  def render_error_response(error, status = :unprocessable_entity, message = "")
+  def render_error_response(error, status = :unprocessable_content, message = "")
     json_response({
                     success: false,
                     message:,
