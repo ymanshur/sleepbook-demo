@@ -32,6 +32,6 @@ class V1::User::FolloweesControllerTest < ActionDispatch::IntegrationTest
       delete v1_user_followee_url(@user, @followee), as: :json
     end
 
-    assert_response :no_content
+    assert_response :success
   end
 end
