@@ -6,14 +6,19 @@ class V1::User::FolloweesController < ApplicationController
 
   # GET /users/1/followees
   def index
-    @user_followees = @user.followees.all
+    @pagy, @user_followees = pagy(@user.followees.all, **pagination_params)
 
-    render json: @user_followees
+    render_pagy_response(
+      data: @user_followees,
+      message: "Followed users fetched successfully",
+      status: :ok,
+      meta: pagy_metadata(@pagy)
+    )
   end
 
   # GET /users/1/followees/1
   def show
-    render json: @user_followee
+    render_success_response(data: @user_followee, message: "Followed user fetched successfully")
   end
 
   # POST /users/1/followees
@@ -21,13 +26,15 @@ class V1::User::FolloweesController < ApplicationController
     @followee = User.find(user_followee_params[:followed_id])
     @user.followees << @followee
 
-    render json: @followee, status: :created
+    render_success_response(data: @followee, message: "User followed successfully", status: :created)
   end
 
   # DELETE /users/1/followees/1
   def destroy
     follow = Follow.find_by!(follower: @user, followed: @user_followee)
     follow.destroy!
+
+    render_success_response(message: "User un-following successfully")
   end
 
   private
