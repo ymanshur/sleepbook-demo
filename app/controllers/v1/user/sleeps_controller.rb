@@ -8,7 +8,7 @@ class V1::User::SleepsController < ApplicationController
 
     render_pagy_response(
       data: @user_sleeps,
-      message: "Users' sleeps fetched successfully",
+      message: "User's sleeps fetched successfully",
       status: :ok,
       meta: pagy_metadata(@pagy)
     )
@@ -16,28 +16,28 @@ class V1::User::SleepsController < ApplicationController
 
   # GET /users/1/sleeps/1
   def show
-    render_success_response(data: @user_sleep, message: "Users' sleep fetched successfully")
+    render_success_response(data: @user_sleep, message: "User's sleep fetched successfully")
   end
 
   # POST /users/1/sleeps
   def create
     @user_sleep = @user.sleeps.create!(user_sleep_params)
 
-    render_success_response(data: @user_sleep, message: "Users' sleep created successfully", status: :created)
+    render_success_response(data: @user_sleep, message: "User's sleep created successfully", status: :created)
   end
 
   # PATCH/PUT /user/sleeps/1
   def update
     @user_sleep.update!(user_sleep_params)
 
-    render_success_response(data: @user_sleep, message: "Users' sleep updated successfully")
+    render_success_response(data: @user_sleep, message: "User's sleep updated successfully")
   end
 
   # DELETE /user/sleeps/1
   def destroy
     @user_sleep.destroy!
 
-    render_success_response(message: "Users' sleep deleted successfully")
+    render_success_response(message: "User's sleep deleted successfully")
   end
 
   private
@@ -52,6 +52,6 @@ class V1::User::SleepsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def user_sleep_params
-      params.expect(user_sleep: [ :start_time, :end_time, :duration ])
+      params.expect(user_sleep: [ :start_time, :end_time ])
     end
 end
