@@ -22,19 +22,23 @@ module ExceptionHandler
   private
 
   def handle_not_found(error)
-    render_error_response(error, :not_found, "Not Found")
+    render_error_response(error, :not_found, status(:not_found))
   end
 
   def handle_unprocessable_content(error)
-    render_error_response(error, :unprocessable_content, "Unprocessable Content")
+    render_error_response(error, :unprocessable_content, status(:unprocessable_content))
   end
 
   def handle_bad_request(error)
-    render_error_response(error, :bad_request, "Bad Request")
+    render_error_response(error, :bad_request, status(:bad_request))
   end
 
   def handle_internal_error(error)
-    render_error_response(error, :internal_server_error, "Internal Server Error")
+    render_error_response(error, :internal_server_error, status(:internal_server_error))
+  end
+
+  def status(status_symbol)
+    Rack::Utils::HTTP_STATUS_CODES[Rack::Utils.status_code(status_symbol)]
   end
 
   def log_exception(e)
