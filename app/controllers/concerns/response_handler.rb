@@ -14,7 +14,7 @@ module ResponseHandler
                     success: true,
                     message:,
                     data:,
-                    meta:
+                    meta: meta.presence
                   }, status)
   end
 
