@@ -2,6 +2,8 @@ class User < ApplicationRecord
   has_many :sleeps, dependent: :destroy
   has_many :follows, foreign_key: :follower_id, dependent: :destroy
   has_many :followees, through: :follows, source: :followed
+  has_many :being_follows, class_name: "Follow", foreign_key: :followed_id, dependent: :destroy
+  has_many :followers, through: :being_follows, source: :follower
 
   validates :name, presence: true
 end
