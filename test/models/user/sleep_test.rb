@@ -21,7 +21,7 @@ class User::SleepTest < ActiveSupport::TestCase
     assert_not_nil user_sleep.duration, "Saved the sleep with nil duration"
   end
 
-  test "should not completed the sleep without positive duration" do
+  test "should not completed sleep without positive duration" do
     user_sleep = user_sleeps(:three_active)
 
     # Complete the sleep by set the end_time
@@ -29,7 +29,7 @@ class User::SleepTest < ActiveSupport::TestCase
     assert_not user_sleep.update(end_time: user_sleep.start_time - 1.hour), "Completed the sleep with negative duration"
   end
 
-  test "should not completed the sleep without correct duration" do
+  test "should not completed sleep without correct duration" do
     user = users(:one)
 
     user_sleep = User::Sleep.create!(user:, start_time: Time.current)
