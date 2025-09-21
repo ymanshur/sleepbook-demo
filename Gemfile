@@ -22,6 +22,9 @@ group :development, :test do
 
   # Set up enviroment from local .env file
   gem "dotenv-rails"
+
+  # Generate realistic-looking fake data for various purposes
+  gem "faker", "~> 3.5"
 end
 
 group :development do
@@ -33,5 +36,5 @@ group :development do
   gem "solargraph"
 end
 
-# Pagination#
+# Pagination
 gem "pagy", "~> 9.4"
