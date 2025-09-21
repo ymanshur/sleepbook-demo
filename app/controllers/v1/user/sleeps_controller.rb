@@ -23,9 +23,10 @@ class V1::User::SleepsController < ApplicationController
 
   # POST /users/1/sleeps
   def create
-    @user_sleep = @user.sleeps.create!(user_sleep_params)
+    @user.sleeps.create!(user_sleep_params)
+    @user_sleeps = @user.sleeps.recent.ordered
 
-    render_success_response(data: @user_sleep, message: "User's sleep created successfully", status: :created)
+    render_success_response(data: @user_sleeps, message: "User's sleep created successfully", status: :created)
   end
 
   # PATCH/PUT /user/sleeps/1
