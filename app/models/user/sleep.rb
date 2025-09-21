@@ -4,7 +4,6 @@ class User::Sleep < ApplicationRecord
   validates :start_time, presence: true
   validate :end_time_after_start_time, if: :end_time_present?
 
-  default_scope { limit(ENV.fetch("DEFAULT_SCOPE_LIMIT", 25).to_i) }
   scope :ordered, -> { order(start_time: :desc) }
   scope :ranked, -> { where(duration: 1..).order(duration: :desc) }
   scope :recent, -> { where(start_time: 1.week.ago.beginning_of_week..) }
