@@ -4,7 +4,7 @@ class V1::User::FolloweeSleepsController < ApplicationController
 
   # GET /users/1/followee_sleeps
   def index
-    @pagy, @user_followee_sleeps = pagy(@user.followees_sleeps.recent, **pagination_params)
+    @pagy, @user_followee_sleeps = pagy(@user.followees_sleeps.recent.ranked, **pagination_params)
 
 
     render_pagy_response(
