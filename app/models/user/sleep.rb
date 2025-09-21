@@ -6,6 +6,7 @@ class User::Sleep < ApplicationRecord
 
   default_scope { limit(ENV.fetch("DEFAULT_SCOPE_LIMIT", 25).to_i) }
   scope :ordered, -> { order(start_time: :desc) }
+  scope :ranked, -> { where(duration: 1..).order(duration: :desc) }
   scope :recent, -> { where(start_time: 1.week.ago.beginning_of_week..) }
 
   before_save :set_duration
