@@ -38,3 +38,6 @@ end
 
 # Pagination
 gem "pagy", "~> 9.4"
+
+# Customize and format JSON responses
+gem "active_model_serializers", "~> 0.10.15"
