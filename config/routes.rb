@@ -12,6 +12,7 @@ Rails.application.routes.draw do
     resources :users do
       resources :sleeps, controller: "user/sleeps"
       resources :followees, controller: "user/followees", except: [ :update ]
+      resources :followee_sleeps, controller: "user/followee_sleeps", only: [ :index, :show ]
     end
   end
 
