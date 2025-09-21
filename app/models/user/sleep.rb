@@ -4,6 +4,8 @@ class User::Sleep < ApplicationRecord
   validates :start_time, presence: true
   validate :end_time_after_start_time, if: :end_time_present?
 
+  scope :ordered, -> { order(start_time: :desc) }
+
   before_save :set_duration
 
   private
