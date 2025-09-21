@@ -6,7 +6,7 @@ class V1::User::SleepsController < ApplicationController
 
   # GET /users/1/sleeps
   def index
-    @pagy, @user_sleeps = pagy(@user.sleeps.all, **pagination_params)
+    @pagy, @user_sleeps = pagy(@user.sleeps.ordered, **pagination_params)
 
     render_pagy_response(
       data: @user_sleeps,
