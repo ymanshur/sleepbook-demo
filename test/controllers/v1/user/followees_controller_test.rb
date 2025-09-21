@@ -2,9 +2,9 @@ require "test_helper"
 
 class V1::User::FolloweesControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @follows = follows(:one)
-    @user = @follows.follower
-    @followee = @follows.followed
+    @follow = follows(:one)
+    @user = @follow.follower
+    @followee = @follow.followed
 
     @followed = users(:three)
   end

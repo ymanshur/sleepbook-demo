@@ -22,7 +22,7 @@ class User::SleepTest < ActiveSupport::TestCase
   end
 
   test "should not completed sleep without positive duration" do
-    user_sleep = user_sleeps(:three_active)
+    user_sleep = user_sleeps(:three)
 
     # Complete the sleep by set the end_time
     assert_not user_sleep.update(end_time: user_sleep.start_time), "Completed the sleep with zero duration"
