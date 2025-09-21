@@ -5,7 +5,7 @@ class User::Sleep < ApplicationRecord
   validate :end_time_after_start_time, if: :end_time_present?
 
   scope :ordered, -> { order(start_time: :desc) }
-  scope :ranked, -> { where(duration: 1..).order(duration: :desc) }
+  scope :ranked, -> { where.not(end_time: nil).order(duration: :desc) }
   scope :recent, -> { where(start_time: 1.week.ago.beginning_of_week..) }
 
   before_save :set_duration
