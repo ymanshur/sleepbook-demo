@@ -28,7 +28,7 @@ class DummyDataGenerator
 
   def run_users_sleeps_task
     puts "Starting data generation process..."
-    start_time = 1.year.ago.beginning_of_year
+    base_time = 1.week.ago.beginning_of_week
 
     puts "Generating #{@num_users} users..."
 
@@ -36,7 +36,7 @@ class DummyDataGenerator
     users_to_insert = []
 
     @num_users.times do
-      created_at = start_time + rand(0..14).days
+      created_at = base_time + rand(0..14).days + rand(0..59).minutes + rand(0..59).seconds
       next unless created_at <= @tnow
 
       users_to_insert << {
@@ -76,16 +76,10 @@ class DummyDataGenerator
         break unless current_time <= @tnow
 
         sleep_start_time = current_time
-        sleep_end_time = sleep_start_time + rand(1..8).hours
+        sleep_end_time = sleep_start_time + rand(2..8).hours + rand(0..59).minutes + rand(0..59).seconds
         duration_in_seconds = (sleep_end_time - sleep_start_time).to_i
 
-        current_time += rand(8..16).hours
-        unless current_time <= @tnow
-          sleep_end_time = nil
-          duration_in_seconds = nil
-        end
-
-        sleeps_to_insert << {
+        sleep_to_insert = {
           user_id: user["id"],
           start_time: sleep_start_time,
           end_time: sleep_end_time,
@@ -93,6 +87,16 @@ class DummyDataGenerator
           created_at: sleep_start_time,
           updated_at: sleep_end_time
         }
+
+        # let one uncompleted sleep
+        unless sleep_to_insert[:end_time] <= @tnow
+          sleep_to_insert[:end_time] = nil
+          sleep_to_insert[:duration] = nil
+        end
+
+        sleeps_to_insert << sleep_to_insert
+
+        current_time = sleep_end_time + rand(4..16).hours + rand(0..59).minutes + rand(0..59).seconds
 
         if sleeps_to_insert.length >= @batch_size
           User::Sleep.insert_all(sleeps_to_insert, returning: false)
