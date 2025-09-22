@@ -36,6 +36,7 @@ group :development do
   gem "solargraph"
 
   # Alerting you when to use eager loading
+  gem "bullet", "~> 8.0"
 end
 
 # Pagination
