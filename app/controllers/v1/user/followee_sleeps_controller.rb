@@ -4,8 +4,9 @@ class V1::User::FolloweeSleepsController < ApplicationController
 
   # GET /users/1/followee_sleeps
   def index
-    @pagy, @user_followee_sleeps = pagy(@user.followees_sleeps.recent.ranked, **pagination_params)
-
+    @pagy, @user_followee_sleeps = pagy(
+      @user.followees_sleeps.includes(:user).recent.ranked,
+      **pagination_params)
 
     render_pagy_response(
       data: ActiveModelSerializers::SerializableResource.new(@user_followee_sleeps, each_serializer: V1::User::FolloweeSleepSerializer),
