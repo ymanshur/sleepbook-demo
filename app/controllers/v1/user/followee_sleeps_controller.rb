@@ -5,7 +5,10 @@ class V1::User::FolloweeSleepsController < ApplicationController
   # GET /users/1/followee_sleeps
   def index
     @pagy, @user_followee_sleeps = pagy(
-      @user.followee_sleeps.includes(:user).recent.ranked,
+      RecentFolloweeSleep
+        .where(follower_id: @user.id)
+        .includes(:sleep)
+        .ordered,
       **pagination_params)
 
     render_pagy_response(
