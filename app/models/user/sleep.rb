@@ -6,12 +6,19 @@ class User::Sleep < ApplicationRecord
 
   scope :ordered, -> { order(start_time: :desc) }
   scope :ranked, -> { where.not(end_time: nil).order(duration: :desc, id: :asc) }
+
+  # TODO: Provide user sleeps filtering based on date range,
+  # rather than simply displaying the last 2 weeks of data.
+  # Example URL:  '/api/v1/users/1/sleeps?start=1755801646&end=1758480046'
   scope :recent, -> { where(start_time: 1.week.ago.beginning_of_week..) }
 
   before_save :set_duration
 
   private
 
+
+  # TODO: Validate user sleep duration with MINIMUM_DURATION,
+  # can also limit the rate at which users can store excessive sleep session data.
   def set_duration
     duration = 0
 
