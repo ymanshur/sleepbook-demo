@@ -7,12 +7,14 @@ class V1::User::FolloweeSleepsController < ApplicationController
     @pagy, @user_followee_sleeps = pagy(
       RecentFolloweeSleep
         .where(follower_id: @user.id)
-        .includes(:sleep)
         .ordered,
       **pagination_params)
 
     render_pagy_response(
-      data: ActiveModelSerializers::SerializableResource.new(@user_followee_sleeps, each_serializer: V1::User::FolloweeSleepSerializer),
+      data: ActiveModelSerializers::SerializableResource.new(
+        @user_followee_sleeps.includes(:sleep, :user),
+        each_serializer: V1::User::FolloweeSleepSerializer
+      ),
       message: "Followed sleeps fetched successfully",
       status: :ok,
       meta: pagy_metadata(@pagy)
