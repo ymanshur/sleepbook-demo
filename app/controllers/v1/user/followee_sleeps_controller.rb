@@ -8,7 +8,7 @@ class V1::User::FolloweeSleepsController < ApplicationController
 
 
     render_pagy_response(
-      data: @user_followee_sleeps,
+      data: ActiveModelSerializers::SerializableResource.new(@user_followee_sleeps, each_serializer: V1::User::FolloweeSleepSerializer),
       message: "Followed sleeps fetched successfully",
       status: :ok,
       meta: pagy_metadata(@pagy)
