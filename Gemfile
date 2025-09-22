@@ -34,6 +34,8 @@ group :development do
   # Language server that provides intellisense,
   # code completion, and inline documentation
   gem "solargraph"
+
+  # Alerting you when to use eager loading
 end
 
 # Pagination
@@ -41,3 +43,6 @@ gem "pagy", "~> 9.4"
 
 # Customize and format JSON responses
 gem "active_model_serializers", "~> 0.10.15"
+
+# Versioning database views
+gem "scenic", "~> 1.9"
