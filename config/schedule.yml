@@ -1,0 +1,3 @@
+refresh_recent_followee_sleeps_job:
+  cron: "*/5 * * * *"
+  class: "RefreshRecentFolloweeSleepsJob"

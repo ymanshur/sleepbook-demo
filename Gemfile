@@ -45,5 +45,10 @@ gem "pagy", "~> 9.4"
 # Customize and format JSON responses
 gem "active_model_serializers", "~> 0.10.15"
 
+# Background jobs processor
+gem "sidekiq", "~> 8.0"
+# Schedule jobs at specified times
+gem "sidekiq-cron", "~> 2.3"
+
 # Versioning database views
 gem "scenic", "~> 1.9"
