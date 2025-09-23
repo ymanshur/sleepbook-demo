@@ -5,6 +5,7 @@ class User < ApplicationRecord
   has_many :followees_sleeps, through: :followees, source: :sleeps
   has_many :being_follows, class_name: "Follow", foreign_key: :followed_id, dependent: :destroy
   has_many :followers, through: :being_follows, source: :follower
+  has_many :recent_followee_sleeps, class_name: "RecentFolloweeSleep", foreign_key: :follower_id
   validates :name, presence: true
 
   def followee_sleeps
