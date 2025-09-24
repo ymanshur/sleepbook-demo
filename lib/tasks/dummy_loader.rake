@@ -6,7 +6,7 @@ class DummyDataGenerator
     # Define the number of records to create, with defaults
     @num_users = ENV.fetch("USERS", 1_000).to_i
     @num_sleeps_per_user = ENV.fetch("SLEEPS", 800).to_i
-    @num_follows_per_user = ENV.fetch("FOLLOWS", 1_000).to_i
+    @num_follows_per_user = ENV.fetch("FOLLOWS", 800).to_i
     @batch_size = 1_000
   end
 
@@ -155,10 +155,10 @@ class DummyDataGenerator
     puts "  ...deleted all follows records"
     User::Sleep.delete_all
     puts "  ...deleted all user sleeps records"
+    User::RecentFolloweeSleep.refresh
+    puts "  ...refreshed user recent followee sleeps records"
     User.delete_all
     puts "  ...deleted all users records"
-    RecentFolloweeSleep.delete_all
-    puts "  ...deleted all recent followee sleeps records"
 
     # Reset primary key sequences for PostgreSQL to start from 1 again
     ActiveRecord::Base.connection.reset_pk_sequence!("users")
