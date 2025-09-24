@@ -26,7 +26,7 @@ class V1::User::SleepsController < ApplicationController
     @user.sleeps.create!(user_sleep_params)
     @user_sleeps = @user.sleeps.recent.ordered
 
-    render_success_response(data: @user_sleeps, message: "User's sleep created successfully", status: :created)
+    render_success_response(data: @user_sleeps.limit(ENV.fetch("DEFAULT_SCOPE_LIMIT", 25).to_i), message: "User's sleep created successfully", status: :created)
   end
 
   # PATCH/PUT /user/sleeps/1
