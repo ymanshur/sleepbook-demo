@@ -73,7 +73,7 @@ rails db:create db:migrate
 ```bash
 # HTTP server
 
-rails s
+rails server
 ```
 
 The server will run by default on <http://localhost:3000>
@@ -82,6 +82,21 @@ The server will run by default on <http://localhost:3000>
 # Background jobs consumers
 
 bundle exec sidekiq
+```
+
+#### Change the refresh materialized view scheduling
+
+```yml
+# config/schedule.yml
+refresh_recent_followee_sleeps_job:
+  cron: "*/5 * * * *"
+  class: "RefreshRecentFolloweeSleepsJob"
+```
+
+To run the scedule immediatelly
+
+```bash
+rails runner "RefreshRecentFolloweeSleepsJob.perform_now"
 ```
 
 ### Testing
@@ -275,53 +290,55 @@ There are two things that optimizing the throughput of a single-node database li
 
     | Table_Name | Row_Count |
     | ---------------------- | ------------------- |
-    | recent_followee_sleeps | 6135701 |
-    | follows                |  499501 |
-    | user_sleeps            |   90339 |
+    | recent_followee_sleeps | 6037199 |
+    | follows                |  399583 |
+    | user_sleeps            |   90047 |
     | users                  |    1000 |
 
     | Follower_ID | Total_Followees | Total_Recent_Followee_Sleeps |
     | --- | --- | ----- |
-    | 347 | 999 | 12275 |
+    | 929 | 799 | 12087 |
 
     and the related query execution planning result shows:
 
     ```bash
-        EXPLAIN (ANALYZE, VERBOSE) SELECT "user_sleeps".* FROM "user_sleeps" INNER JOIN "users" ON "user_sleeps"."user_id" = "users"."id" INNER JOIN "follows" ON "users"."id" = "follows"."followed_id" WHERE "follows"."follower_id" = 347 AND "user_sleeps"."start_time" >= '2025-09-14 17:00:00' AND "user_sleeps"."end_time" IS NOT NULL ORDER BY "user_sleeps"."duration" DESC, "user_sleeps"."id" ASC /*application='SleepbookDemo'*/
-                                                                                        QUERY PLAN
-    -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    Sort  (cost=3119.43..3152.57 rows=13254 width=52) (actual time=17.816..18.795 rows=12708 loops=1)
+    EXPLAIN (ANALYZE, VERBOSE) SELECT "user_sleeps".* FROM "user_sleeps" INNER JOIN "users" ON "user_sleeps"."user_id" = "users"."id" INNER JOIN "follows" ON "users"."id" = "follows"."followed_id" WHERE "follows"."follower_id" = 929 AND "user_sleeps"."start_time" >= '2025-09-14 17:00:00' AND "user_sleeps"."end_time" IS NOT NULL ORDER BY "user_sleeps"."duration" DESC, "user_sleeps"."id" ASC /*application='SleepbookDemo'*/
+                                                                                                QUERY PLAN
+    ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Sort  (cost=3148.91..3183.26 rows=13738 width=52) (actual time=15.245..16.546 rows=12435 loops=1)
     Output: user_sleeps.id, user_sleeps.user_id, user_sleeps.start_time, user_sleeps.end_time, user_sleeps.duration, user_sleeps.created_at, user_sleeps.updated_at
     Sort Key: user_sleeps.duration DESC, user_sleeps.id
-    Sort Method: quicksort  Memory: 2172kB
-    ->  Hash Join  (cost=82.82..2211.92 rows=13254 width=52) (actual time=0.654..11.846 rows=12708 loops=1)
+    Sort Method: quicksort  Memory: 2133kB
+    ->  Hash Join  (cost=73.17..2204.71 rows=13738 width=52) (actual time=0.380..10.291 rows=12435 loops=1)
             Output: user_sleeps.id, user_sleeps.user_id, user_sleeps.start_time, user_sleeps.end_time, user_sleeps.duration, user_sleeps.created_at, user_sleeps.updated_at
             Inner Unique: true
-            Hash Cond: (user_sleeps.user_id = follows.followed_id)
-            ->  Hash Join  (cost=31.50..2126.66 rows=12868 width=60) (actual time=0.284..9.354 rows=12721 loops=1)
-                Output: user_sleeps.id, user_sleeps.user_id, user_sleeps.start_time, user_sleeps.end_time, user_sleeps.duration, user_sleeps.created_at, user_sleeps.updated_at, users.id
+            Hash Cond: (user_sleeps.user_id = users.id)
+            ->  Hash Join  (cost=41.67..2137.47 rows=13556 width=60) (actual time=0.198..8.302 rows=12435 loops=1)
+                Output: user_sleeps.id, user_sleeps.user_id, user_sleeps.start_time, user_sleeps.end_time, user_sleeps.duration, user_sleeps.created_at, user_sleeps.updated_at, follows.followed_id
                 Inner Unique: true
-                Hash Cond: (user_sleeps.user_id = users.id)
-                ->  Seq Scan on public.user_sleeps  (cost=0.00..2061.24 rows=12868 width=52) (actual time=0.009..6.705 rows=12721 loops=1)
-                        Output: user_sleeps.id, user_sleeps.user_id, user_sleeps.start_time, user_sleeps.end_time, user_sleeps.duration,
-    user_sleeps.created_at, user_sleeps.updated_at
-                        Filter: ((user_sleeps.end_time IS NOT NULL) AND (user_sleeps.start_time >= '2025-09-14 17:00:00'::timestamp with
-    out time zone))
-                        Rows Removed by Filter: 77618
-                ->  Hash  (cost=19.00..19.00 rows=1000 width=8) (actual time=0.263..0.265 rows=1000 loops=1)
-                        Output: users.id
-                        Buckets: 1024  Batches: 1  Memory Usage: 48kB
-                        ->  Seq Scan on public.users  (cost=0.00..19.00 rows=1000 width=8) (actual time=0.003..0.109 rows=1000 loops=1)
-                            Output: users.id
-            ->  Hash  (cost=38.45..38.45 rows=1030 width=8) (actual time=0.357..0.358 rows=999 loops=1)
-                Output: follows.followed_id
-                Buckets: 2048  Batches: 1  Memory Usage: 56kB
-                ->  Index Scan using index_follows_on_follower_id on public.follows  (cost=0.42..38.45 rows=1030 width=8) (actual time
-    =0.025..0.168 rows=999 loops=1)
+                Hash Cond: (user_sleeps.user_id = follows.followed_id)
+                ->  Seq Scan on public.user_sleeps  (cost=0.00..2054.59 rows=15629 width=52) (actual time=0.003..
+    5.905 rows=15547 loops=1)
+                        Output: user_sleeps.id, user_sleeps.user_id, user_sleeps.start_time, user_sleeps.end_time,
+    user_sleeps.duration, user_sleeps.created_at, user_sleeps.updated_at
+                        Filter: ((user_sleeps.end_time IS NOT NULL) AND (user_sleeps.start_time >= '2025-09-14 17:0
+    0:00'::timestamp without time zone))
+                        Rows Removed by Filter: 74500
+                ->  Hash  (cost=30.68..30.68 rows=879 width=8) (actual time=0.181..0.183 rows=799 loops=1)
                         Output: follows.followed_id
-                        Index Cond: (follows.follower_id = 347)
-    Planning Time: 1.055 ms
-    Execution Time: 19.521 ms
+                        Buckets: 1024  Batches: 1  Memory Usage: 40kB
+                        ->  Index Scan using index_follows_on_follower_id on public.follows  (cost=0.30..30.68 rows
+    =879 width=8) (actual time=0.016..0.098 rows=799 loops=1)
+                            Output: follows.followed_id
+                            Index Cond: (follows.follower_id = 929)
+            ->  Hash  (cost=19.00..19.00 rows=1000 width=8) (actual time=0.174..0.175 rows=1000 loops=1)
+                Output: users.id
+                Buckets: 1024  Batches: 1  Memory Usage: 48kB
+                ->  Seq Scan on public.users  (cost=0.00..19.00 rows=1000 width=8) (actual time=0.006..0.068 rows
+    =1000 loops=1)
+                        Output: users.id
+    Planning Time: 0.759 ms
+    Execution Time: 17.076 ms
     ```
 
     From the analysis, I know that as the number of followers increases, it becomes less important to index `user_id` in the user_sleeps table, even when the queries are made more efficient and the number of nested joins is reduced across the `follows` table.
@@ -333,32 +350,31 @@ There are two things that optimizing the throughput of a single-node database li
     By setting the materialized view only wrap the last 2 weeks of data, then all that's left is to filter by `follower_id` and sort by `duration` column. The results of the analysis with the same data set are shown below
 
     ```shell
-        EXPLAIN (ANALYZE, VERBOSE) SELECT "recent_followee_sleeps".* FROM "recent_followee_sleeps" WHERE "recent_followee_sleeps"."follower_id" = 347 ORDER BY "recent_followee_sleeps"."duration" DESC, "recent_followee_sleeps"."sleep_id" ASC /*application='SleepbookDemo'*/
+    EXPLAIN (ANALYZE, VERBOSE) SELECT "recent_followee_sleeps".* FROM "recent_followee_sleeps" WHERE "recent_followee_sleeps"."follower_id" = 929 ORDER BY "recent_followee_sleeps"."duration" DESC, "recent_followee_sleeps"."sleep_id" ASC /*application='SleepbookDemo'*/
                                                                                     QUERY PLAN
-    --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    Sort  (cost=16912.82..16926.71 rows=5559 width=44) (actual time=13.135..13.461 rows=12275 loops=1)
-    Output: id, follower_id, sleep_id, user_id, duration
+    ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    Sort  (cost=33408.37..33440.07 rows=12678 width=60) (actual time=12.119..12.464 rows=12087 loops=1)
+    Output: id, follower_id, sleep_id, user_id, start_time, end_time, duration
     Sort Key: recent_followee_sleeps.duration DESC, recent_followee_sleeps.sleep_id
-    Sort Method: quicksort  Memory: 1343kB
-    ->  Bitmap Heap Scan on public.recent_followee_sleeps  (cost=123.51..16567.03 rows=5559 width=44) (actual time=2.696..10.080 rows=12275 loops=1)
-            Output: id, follower_id, sleep_id, user_id, duration
-            Recheck Cond: (recent_followee_sleeps.follower_id = 347)
-            Heap Blocks: exact=10981
-            ->  Bitmap Index Scan on index_recent_followee_sleeps_on_follower_id_and_duration  (cost=0.00..122.12 rows=5559 width=0) (actual time=1.545..1.545 rows=12275 loops=1)
-                Index Cond: (recent_followee_sleeps.follower_id = 347)
-    Planning Time: 0.083 ms
-    Execution Time: 13.932 ms
-    (12 rows)
+    Sort Method: quicksort  Memory: 2084kB
+    ->  Bitmap Heap Scan on public.recent_followee_sleeps  (cost=282.69..32544.36 rows=12678 width=60) (actual time=2.889..9.217 rows=12087 loops=1)
+            Output: id, follower_id, sleep_id, user_id, start_time, end_time, duration
+            Recheck Cond: (recent_followee_sleeps.follower_id = 929)
+            Heap Blocks: exact=10915
+            ->  Bitmap Index Scan on index_recent_followee_sleeps_on_follower_id_and_duration  (cost=0.00..279.52 rows=12678 width=0) (actual time=1.738..1.739 rows=12087 loops=1)
+                Index Cond: (recent_followee_sleeps.follower_id = 929)
+    Planning Time: 0.076 ms
+    Execution Time: 12.912 ms
     ```
 
     This approach enables endpoints to handle much larger amounts of data with decreasing response latency, and would significantly increase throughput (must be confirmed by performance tests).
 
     | State | Total | Views | ActiveRecord | GC |
     | ------ | ---- | ------ | ---------------------------- | ----- |
-    | Before | 53ms | 18.6ms | 28.8ms (4 queries, 0 cached) | 3.9ms |
-    | After  | 44ms | 21.9ms | 18.4ms (5 queries, 0 cached) | 0.0ms |
+    | Before | 97ms | 33.9ms | 55.6ms (4 queries, 0 cached) | 11.0ms |
+    | After (MV)  | 35ms | 15.4ms | 15.9ms (4 queries, 0 cached) | 0.0ms |
 
-    It should also be noted that I have added indexing to the materialized view table, including composite index (`follower_id`, `sleep_id`) and (`follower_id`, `duration`) so that performance will be more effective even if there is more data.
+    It should also be noted that I have added indexing to the materialized view table, including composite index unique (`follower_id`, `sleep_id`) and ordered (`follower_id`, `duration`) so that performance will be more effective even if there is more data.
 
     However, this approach still has trade-offs. Depending on the SLA, the data will not always be consistent with the source table; scheduling can be organized based on this. For now, I set the scheduling every 5 minutes, assuming about 7000 incoming data in that period, following the calculation [previously](#traffic-estimation)
 - Another approach that can be made is to store data in Redis as a cache. Especially if the system needs to provide leaderboard data of sleep duration for all users. The list of top users can be stored in Sorted Sets Redis as the fastest source of truth through event-sourching architecture.
