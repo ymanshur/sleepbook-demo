@@ -58,6 +58,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_24_214833) do
     WHERE ((us.end_time IS NOT NULL) AND (us.start_time >= date_trunc('week'::text, (now() - 'P7D'::interval))))
     ORDER BY us.duration DESC;
   SQL
+  add_index "recent_followee_sleeps", ["follower_id", "duration"], name: "index_recent_followee_sleeps_on_follower_id_and_duration", order: { duration: :desc }
   add_index "recent_followee_sleeps", ["follower_id", "sleep_id"], name: "index_recent_followee_sleeps_on_follower_id_and_sleep_id", unique: true
+  add_index "recent_followee_sleeps", ["follower_id", "start_time"], name: "index_recent_followee_sleeps_on_follower_id_and_start_time"
 
 end
