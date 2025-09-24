@@ -6,10 +6,9 @@ SELECT
     us.duration
 FROM
     follows f
-    JOIN users u ON f.followed_id = u.id
-    JOIN user_sleeps us ON us.user_id = u.id
+    JOIN user_sleeps us ON us.user_id = f.followed_id
 WHERE
     us.end_time IS NOT NULL
-    AND us.start_time >= NOW() - interval '14 days'
+    AND us.start_time >= DATE_TRUNC('week', NOW() - INTERVAL '1 week')
 ORDER BY
     us.duration DESC;

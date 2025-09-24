@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_23_015431) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_24_214833) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -50,14 +50,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_23_015431) do
       f.follower_id,
       us.id AS sleep_id,
       us.user_id,
+      us.start_time,
+      us.end_time,
       us.duration
-     FROM ((follows f
-       JOIN users u ON ((f.followed_id = u.id)))
-       JOIN user_sleeps us ON ((us.user_id = u.id)))
+     FROM (follows f
+       JOIN user_sleeps us ON ((us.user_id = f.followed_id)))
     WHERE ((us.end_time IS NOT NULL) AND (us.start_time >= date_trunc('week'::text, (now() - 'P7D'::interval))))
     ORDER BY us.duration DESC;
   SQL
-  add_index "recent_followee_sleeps", ["follower_id", "duration"], name: "index_recent_followee_sleeps_on_follower_id_and_duration", order: { duration: :desc }
   add_index "recent_followee_sleeps", ["follower_id", "sleep_id"], name: "index_recent_followee_sleeps_on_follower_id_and_sleep_id", unique: true
 
 end
