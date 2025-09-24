@@ -8,12 +8,4 @@ class V1::User::RecentFolloweeSleepSerializer < ApplicationSerializer
   def user_name
     object.user.name
   end
-
-  def start_time
-    object.sleep.start_time
-  end
-
-  def end_time
-    object.sleep.end_time
-  end
 end
