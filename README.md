@@ -88,15 +88,15 @@ bundle exec sidekiq
 
 ```yml
 # config/schedule.yml
-refresh_recent_followee_sleeps_job:
+refresh_user_recent_followee_sleeps_job:
   cron: "*/5 * * * *"
-  class: "RefreshRecentFolloweeSleepsJob"
+  class: "RefreshUserRecentFolloweeSleepsJob"
 ```
 
 To run the scedule immediatelly
 
 ```bash
-rails runner "RefreshRecentFolloweeSleepsJob.perform_now"
+rails runner "RefreshUserRecentFolloweeSleepsJob.perform_now"
 ```
 
 ### Testing
@@ -290,12 +290,12 @@ There are two things that optimizing the throughput of a single-node database li
 
     | Table_Name | Row_Count |
     | ---------------------- | ------------------- |
-    | recent_followee_sleeps | 6037199 |
-    | follows                |  399583 |
-    | user_sleeps            |   90047 |
-    | users                  |    1000 |
+    | user_recent_followee_sleeps | 6037199 |
+    | follows                     |  399583 |
+    | user_sleeps                 |   90047 |
+    | users                       |    1000 |
 
-    | Follower_ID | Total_Followees | Total_Recent_Followee_Sleeps |
+    | Follower_ID | Total_Followees | Total_User_Recent_Followee_Sleeps |
     | --- | --- | ----- |
     | 929 | 799 | 12087 |
 
@@ -350,19 +350,19 @@ There are two things that optimizing the throughput of a single-node database li
     By setting the materialized view only wrap the last 2 weeks of data, then all that's left is to filter by `follower_id` and sort by `duration` column. The results of the analysis with the same data set are shown below
 
     ```shell
-    EXPLAIN (ANALYZE, VERBOSE) SELECT "recent_followee_sleeps".* FROM "recent_followee_sleeps" WHERE "recent_followee_sleeps"."follower_id" = 929 ORDER BY "recent_followee_sleeps"."duration" DESC, "recent_followee_sleeps"."sleep_id" ASC /*application='SleepbookDemo'*/
+    EXPLAIN (ANALYZE, VERBOSE) SELECT "user_recent_followee_sleeps".* FROM "user_recent_followee_sleeps" WHERE "user_recent_followee_sleeps"."follower_id" = 929 ORDER BY "user_recent_followee_sleeps"."duration" DESC, "user_recent_followee_sleeps"."sleep_id" ASC /*application='SleepbookDemo'*/
                                                                                     QUERY PLAN
     ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     Sort  (cost=33408.37..33440.07 rows=12678 width=60) (actual time=12.119..12.464 rows=12087 loops=1)
     Output: id, follower_id, sleep_id, user_id, start_time, end_time, duration
-    Sort Key: recent_followee_sleeps.duration DESC, recent_followee_sleeps.sleep_id
+    Sort Key: user_recent_followee_sleeps.duration DESC, user_recent_followee_sleeps.sleep_id
     Sort Method: quicksort  Memory: 2084kB
-    ->  Bitmap Heap Scan on public.recent_followee_sleeps  (cost=282.69..32544.36 rows=12678 width=60) (actual time=2.889..9.217 rows=12087 loops=1)
+    ->  Bitmap Heap Scan on public.user_recent_followee_sleeps  (cost=282.69..32544.36 rows=12678 width=60) (actual time=2.889..9.217 rows=12087 loops=1)
             Output: id, follower_id, sleep_id, user_id, start_time, end_time, duration
-            Recheck Cond: (recent_followee_sleeps.follower_id = 929)
+            Recheck Cond: (user_recent_followee_sleeps.follower_id = 929)
             Heap Blocks: exact=10915
-            ->  Bitmap Index Scan on index_recent_followee_sleeps_on_follower_id_and_duration  (cost=0.00..279.52 rows=12678 width=0) (actual time=1.738..1.739 rows=12087 loops=1)
-                Index Cond: (recent_followee_sleeps.follower_id = 929)
+            ->  Bitmap Index Scan on index_user_recent_followee_sleeps_on_follower_id_and_duration  (cost=0.00..279.52 rows=12678 width=0) (actual time=1.738..1.739 rows=12087 loops=1)
+                Index Cond: (user_recent_followee_sleeps.follower_id = 929)
     Planning Time: 0.076 ms
     Execution Time: 12.912 ms
     ```

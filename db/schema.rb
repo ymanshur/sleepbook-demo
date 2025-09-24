@@ -45,7 +45,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_24_214833) do
   add_foreign_key "follows", "users", column: "follower_id"
   add_foreign_key "user_sleeps", "users"
 
-  create_view "recent_followee_sleeps", materialized: true, sql_definition: <<-SQL
+  create_view "user_recent_followee_sleeps", materialized: true, sql_definition: <<-SQL
       SELECT (md5(concat((f.follower_id)::text, '-', (us.id)::text)))::uuid AS id,
       f.follower_id,
       us.id AS sleep_id,
@@ -58,8 +58,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_24_214833) do
     WHERE ((us.end_time IS NOT NULL) AND (us.start_time >= date_trunc('week'::text, (now() - 'P7D'::interval))))
     ORDER BY us.duration DESC;
   SQL
-  add_index "recent_followee_sleeps", ["follower_id", "duration"], name: "index_recent_followee_sleeps_on_follower_id_and_duration", order: { duration: :desc }
-  add_index "recent_followee_sleeps", ["follower_id", "sleep_id"], name: "index_recent_followee_sleeps_on_follower_id_and_sleep_id", unique: true
-  add_index "recent_followee_sleeps", ["follower_id", "start_time"], name: "index_recent_followee_sleeps_on_follower_id_and_start_time"
+  add_index "user_recent_followee_sleeps", ["follower_id", "duration"], name: "index_user_recent_followee_sleeps_on_follower_id_and_duration", order: { duration: :desc }
+  add_index "user_recent_followee_sleeps", ["follower_id", "sleep_id"], name: "index_user_recent_followee_sleeps_on_follower_id_and_sleep_id", unique: true
+  add_index "user_recent_followee_sleeps", ["follower_id", "start_time"], name: "idx_on_follower_id_start_time_b962529fd8"
 
 end
