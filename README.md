@@ -21,7 +21,7 @@ The strategy that comes to mind is written in the [Strategies to Enhance Perform
 - [Puma](https://github.com/puma/puma) for the web server
 - [Pagy](https://github.com/ddnexus/pagy) for the pagination response data
 - [ActiveModelSerializer](https://github.com/rails-api/active_model_serializers/tree/0-10-stable) for formating JSON responses
-- [Scenic](https://github.com/scenic-views/scenic) for database/table view versioning
+- [Scenic](https://github.com/scenic-views/scenic) for database/table materialized view versioning
 - [Sidekiq-cron](https://github.com/sidekiq-cron/sidekiq-cron) for scheduling jobs at specified times
 
 #### Development, Test
@@ -112,7 +112,11 @@ API design can be improved later according to the needs or best practices of RES
 
 ### Roadmap
 
-One way to encourage CONTRIBUTION to this project is to create TODO notes. To view the notes in the codebase, you can run the command `bin/rails notes`
+One way to encourage CONTRIBUTION to this project is to create TODO notes. To view the notes in the codebase, you can run the following command
+
+```bash
+bin/rails notes
+```
 
 #### Features
 
@@ -205,8 +209,8 @@ As for a more comprehensive design, including indexing that will be made, can be
 
 #### Database index
 
-- FK reference will trigger Rails to index the key without the need to explicitly add it to the migration file. For example, Rails [migration](db/migrate/20250919133939_create_user_sleeps.rb) will add an index to the `user_id` column on the user_sleeps table because it references the `id` column in the users table, and it will appear in the [db/schema.rb](db/schema.rb) file as explained in the [Creating Associations](https://guides.rubyonrails.org/active_record_migrations.html#creating-associations).
-- Other index databases are  added as columns or combinations of columns that are frequently used in queries. For example, an index on the combination of `user_id`, `start_time`, and `duration` columns will be needed to improve query performance to retrieve a list of a user sleeps from last week and sorted from the longest by sleep duration. However, it will require more than just database indexing to ensure the feature [No. 3](#functional-requirement) can handle data from many users massively (and compound).
+- FK reference will trigger Rails to index the key without the need to explicitly add it within the migration file. For example, Rails [migration](db/migrate/20250919133939_create_user_sleeps.rb) will add an index to the `user_id` column on the `user_sleeps` table because it references the `id` column in the users table, and it will appear in the [db/schema.rb](db/schema.rb) file as explained in the [Creating Associations](https://guides.rubyonrails.org/active_record_migrations.html#creating-associations).
+- Other database indexes are added as columns or combinations of columns that are frequently used in queries. For example, an index on the combination of `user_id`, `start_time`, and `duration` columns will be needed to improve query performance to retrieve a list of a user sleeps from last week and sorted from the longest by sleep duration. However, it will require more than just database indexing to ensure the feature [No. 3](#functional-requirement) can handle data from many users massively (and compound).
 
     Why add `start_time` instead of `created_at` to be indexed? Because their values will be the same since the sleep session was created, but there is a potential for them to be different if the `start_time` value is changed. Therefore, if I were to filter data by date range, I would take `start_time` as the parameter instead of created at for the same reason.
 
@@ -251,14 +255,19 @@ There are two things that optimizing the throughput of a single-node database li
 
 #### Data Indexing
 
-- The columns that have been added in the index with B-Tree data structure are composite indexes consisting of user_id, start_time, and duration columns in sequence on the `user_sleeps` table, added by running the version [20250921155004_add_composite_index_to_user_sleeps](db/migrate/20250921155004_add_composite_index_to_user_sleeps.rb) of database migration.
-- Establishing the index above will resolve the pagination overflow issue. Every time the page hits the last page, then a full scan occurs, especially if the data has accumulated for years, which always limits the returning only to recent data respecting the indexed `start_time` column. Note that the duration column was added to the composite index in anticipation of the duration-based sorting feature.
+- The columns that have been added in the index with B-Tree data structure are composite indexes consisting of `user_id`, `start_time`, and `duration` columns in sequence on the `user_sleeps` table, by the version [20250921155004_add_composite_index_to_user_sleeps](db/migrate/20250921155004_add_composite_index_to_user_sleeps.rb) of database migration.
+- Establishing the composite index (`user_id`, `start_time`, `duration`) will resolve the pagination overflow issue. Every time the page hits the last page, then a full scan will not occur, meven though data has accumulated over the years, queries will always have limits the returning only to recent data supported with data filters based on the indexed `start_time` column. Note that `user_id` is in front of the composite index because the current feature only displays data from each user so the query used must use this column. While the `duration` column was added to the composite index in anticipation of the duration-based sorting feature.
+
+    If there is going to be a feature to filter directly based on the sleep time range then it should be considered to add a new composite index that only consists of (`start_time`, `duration`)
+
 - Adding a [Partial index](db/migrate/20250921174246_add_composite_partial_index_to_user_sleeps.rb) is to prevent nil `end_time` data included within the index data structure, which might reduce the filtering step, especially for displaying completed sleep with calculated duration. Covering index is also added once the `end_time` value is no longer nil, then the data will always be sent as a response.
+
+- In addition, I also added a [unique index](db/migrate/20250921000404_add_unique_index_to_follows.rb) for the (`follower_id`, `followed_id`) column because every time a followee is added, there will always be a check to prevent data duplication.
 
 #### Data Partitioning
 
 - Database effort can be minimized by deleting or separating irrelevant data from the primary database or source table every day using a scheduler.
-- Another option is to maintain a persistent view that only stores relevant data to the query. That's why I chose to use PostgreSQL, which provides a physical view table that can be used for this option, called a materialized view.
+- Another option is to maintain a persistent view that only stores relevant data to the query. That's why I chose to use PostgreSQL, which provides a physical view table that can be used for this option, called a **Materialized View**.
 
     As I predicted [earlier](#database-index), data access that involves complex queries cannot only be solved by database indexing, as my analysis below shows.
 
@@ -315,13 +324,13 @@ There are two things that optimizing the throughput of a single-node database li
     Execution Time: 19.521 ms
     ```
 
-    From the analysis, we know that as the number of followers increases, it becomes less important to index `user_id` in the user_sleeps table, even when the queries are made more efficient and the number of nested joins is reduced across the `follows` table.
+    From the analysis, I know that as the number of followers increases, it becomes less important to index `user_id` in the user_sleeps table, even when the queries are made more efficient and the number of nested joins is reduced across the `follows` table.
 
-    That's why I have added the view table with the intention of reducing the nested joins query that overloads the database every time the user accesses the sleep followees data. Through the View table, query retrieval can be done without extensive table joins because it already stores the required data in a precomputed view. This strategy is called Denormalization. An overview of this table is shown in the figure below.
+    That's why I have added the view table with the intention of reducing the nested joins query that overloads the database every time the user accesses the sleep followees data. Through the View table, query retrieval can be done without extensive table joins because it already stores the required data in a precomputed view. This strategy is called **Denormalization**. An overview of this table is shown in the figure below.
 
     <img width="50%" alt="Sleepbook: Materialized View" src="https://github.com/user-attachments/assets/fba9539f-168e-4062-a433-25ba382dcb41" />
 
-    Dengan mengatur Materialized view only wrap the last 2 weeks of data, then all that's left is to filter by `follower_id` and sort desc by duration. The results of the analysis with the same data set are shown below
+    By setting the materialized view only wrap the last 2 weeks of data, then all that's left is to filter by `follower_id` and sort by `duration` column. The results of the analysis with the same data set are shown below
 
     ```shell
         EXPLAIN (ANALYZE, VERBOSE) SELECT "recent_followee_sleeps".* FROM "recent_followee_sleeps" WHERE "recent_followee_sleeps"."follower_id" = 347 ORDER BY "recent_followee_sleeps"."duration" DESC, "recent_followee_sleeps"."sleep_id" ASC /*application='SleepbookDemo'*/
@@ -342,15 +351,17 @@ There are two things that optimizing the throughput of a single-node database li
     (12 rows)
     ```
 
-    This approach enables endpoints to handle much larger amounts of data with decreasing response latency, and should significantly increase throughput (must be confirmed by performance tests).
+    This approach enables endpoints to handle much larger amounts of data with decreasing response latency, and would significantly increase throughput (must be confirmed by performance tests).
 
     | State | Total | Views | ActiveRecord | GC |
     | ------ | ---- | ------ | ---------------------------- | ----- |
     | Before | 53ms | 18.6ms | 28.8ms (4 queries, 0 cached) | 3.9ms |
     | After  | 44ms | 21.9ms | 18.4ms (5 queries, 0 cached) | 0.0ms |
 
+    It should also be noted that I have added indexing to the materialized view table, including composite index (`follower_id`, `sleep_id`) and (`follower_id`, `duration`) so that performance will be more effective even if there is more data.
+
     However, this approach still has trade-offs. Depending on the SLA, the data will not always be consistent with the source table; scheduling can be organized based on this. For now, I set the scheduling every 5 minutes, assuming about 7000 incoming data in that period, following the calculation [previously](#traffic-estimation)
-- Another approach that can be made is to store data in Redis as a cache. Especially if the system needs to provide dashboard data of sleep duration ranking for all users, the list of top users can be stored in Redis as the fastest source of truth through event-sourching architecture.
+- Another approach that can be made is to store data in Redis as a cache. Especially if the system needs to provide leaderboard data of sleep duration for all users. The list of top users can be stored in Sorted Sets Redis as the fastest source of truth through event-sourching architecture.
 
 <!-- This README would normally document whatever steps are necessary to get the
 application up and running.
