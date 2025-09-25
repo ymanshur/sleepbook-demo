@@ -28,7 +28,7 @@
 											"raw": ""
 										},
 										"url": {
-											"raw": "{{host}}/api/v1/users/:user_id/sleeps",
+											"raw": "{{host}}/api/v1/users/:user_id/sleeps?limit=37&start={{$timestamp}}&end={{$timestamp}}",
 											"host": [
 												"{{host}}"
 											],
@@ -47,8 +47,15 @@
 												},
 												{
 													"key": "limit",
-													"value": "25",
-													"disabled": true
+													"value": "37"
+												},
+												{
+													"key": "start",
+													"value": "{{$timestamp}}"
+												},
+												{
+													"key": "end",
+													"value": "{{$timestamp}}"
 												}
 											],
 											"variable": [

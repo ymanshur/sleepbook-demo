@@ -1,4 +1,5 @@
 
+Pagy::DEFAULT[:limit] = ENV.fetch("DEFAULT_SCOPE_LIMIT", 25).to_i
 Pagy::DEFAULT[:count_args] = :id
 
 require "pagy/extras/limit"

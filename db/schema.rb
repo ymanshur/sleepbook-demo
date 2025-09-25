@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_09_24_214833) do
+ActiveRecord::Schema[8.0].define(version: 2025_09_24_232720) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -31,7 +31,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_09_24_214833) do
     t.integer "duration"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["user_id", "duration"], name: "index_user_sleeps_on_user_id_and_duration", order: { duration: :desc }, where: "(end_time IS NOT NULL)"
     t.index ["user_id", "start_time", "duration"], name: "index_part_user_sleeps_on_user_id_and_start_time_and_duration", where: "(end_time IS NOT NULL)", include: ["end_time"]
+    t.index ["user_id", "start_time"], name: "index_user_sleeps_on_user_id_and_start_time", where: "(end_time IS NOT NULL)"
     t.index ["user_id"], name: "index_user_sleeps_on_user_id"
   end
 

@@ -6,7 +6,12 @@ class V1::User::SleepsController < ApplicationController
 
   # GET /users/1/sleeps
   def index
-    @pagy, @user_sleeps = pagy(@user.sleeps.ordered, **pagination_params)
+    start_time, end_time = date_range_params!
+
+    sleeps = @user.sleeps
+    sleeps = sleeps.between(start_time:, end_time:) if start_time.present? && end_time.present?
+
+    @pagy, @user_sleeps = pagy(sleeps.ordered, **pagination_params)
 
     render_pagy_response(
       data: @user_sleeps,
