@@ -4,9 +4,9 @@ class DummyDataGenerator
     @origin_log_level = ActiveRecord::Base.logger.level
 
     # Define the number of records to create, with defaults
-    @num_users = ENV.fetch("USERS", 1_000).to_i
-    @num_sleeps_per_user = ENV.fetch("SLEEPS", 800).to_i
-    @num_follows_per_user = ENV.fetch("FOLLOWS", 800).to_i
+    @num_users = ENV.fetch("USERS", 100_000).to_i
+    @num_sleeps_per_user = ENV.fetch("SLEEPS", 0).to_i
+    @num_follows_per_user = ENV.fetch("FOLLOWS", 500).to_i
     @batch_size = 1_000
   end
 
@@ -35,7 +35,7 @@ class DummyDataGenerator
     users_to_insert = []
 
     @num_users.times do
-      created_at = @tnow - (rand(1..2).month + rand(0..28).days + rand(0..59).minutes + rand(0..59).second)
+      created_at = @tnow - (10.years + rand(0..28).days + rand(0..59).minutes + rand(0..59).second)
 
       users_to_insert << {
         name: Faker::Name.name,

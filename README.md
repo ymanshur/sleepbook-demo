@@ -250,7 +250,7 @@ As for a more comprehensive design, including indexing that will be made, can be
 
     Why add `start_time` instead of `created_at` to be indexed? Because their values will be the same since the sleep session was created, but there is a potential for them to be different if the `start_time` value is changed. Therefore, if I were to filter data by date range, I would take `start_time` as the parameter instead of created at for the same reason.
 
-    However, it will require more than just database indexing to ensure the feature [No. 3](#functional-requirement) can handle data from many users massively (and compound)
+    However, it will require more than just database indexing to ensure the feature [No. 3](#functional-requirement) can handle compound data from many users massively.
 
 - It should be noted that the order of the columns in the key of each index is crucial, and we shouldn't create indexes that haven't even been used in any query.
 
@@ -266,16 +266,16 @@ Most importantly, we must determine whether the incoming traffic will be write o
 
 - Targeted number of daily active users or DAU is **1 million**.
 - It can be estimated that the number of users sleeping in a day is at most 3 times, so there are a total of **5 write requests every day** (assuming wake up on different days).
-- Then, if the average user sees the sleep sessions of their followees, it is **5 times** as well (as many as the number of users who open the application to book sleep)
-- And the estimated number of users who slept in the last 2 weeks is 3 x 14, or which is **about 30**
-- If the targeted number of each user follows, up to **100 friends** on average, then further calculations as follows:
+- Then, if the average user sees the sleep sessions of their followees, it is **10 times** as well.
+- And the estimated number of users who slept in the last 2 weeks is 3 x 14, which is **about 40**
+- If the targeted number of each user follows, up to **500 friends** on average, then further calculations as follows:
 
     |  | **Writes/day** | **Reads/day** |
     | --- | --- | --- |
-    | **Average RPS** | 1000000 x 5 ÷ 86,400 ~= 50 | 1000000 x 5 x 30 x 100 ÷ 86,400 ~= 150000 |
-    | **Peak RPS (rule of thumb)** | ~2 × 50 ~= 100 | ~2 × 150000 ~= 300000 |
+    | **Average RPS** | 1000000 x 5 ÷ 86,400 ~= 50 | 1000000 x 10 ÷ 86,400 ~= 100 |
+    | **Peak RPS (rule of thumb)** | 2 × ~50 ~= 100 | 2 × ~100 ~= 200 |
 
-Based on the assumptions and calculations above, we can conclude that the application **handles more read requests** and must be able to retrieve and send data at least **300000 data** for approximately **50 requests** or **10 concurrent users** every second.
+Based on the assumptions and calculations above, we can conclude that the application **handles more read requests** and must be able to retrieve and send data at least **20000 data** for approximately **100/200 write/read requests** in peak second and **10-20 concurrent users** every second.
 
 ### Performance Features
 
@@ -293,23 +293,25 @@ There are two things that optimizing the throughput of a single-node database li
 
 #### Data Indexing
 
-- The columns that have been added in the index with B-Tree data structure are composite indexes consisting of `user_id`, `start_time`, and `duration` columns in sequence on the `user_sleeps` table, by the version [20250921155004](db/migrate/20250921155004_add_composite_index_to_user_sleeps.rb) of database migration.
+- The columns that have been indexed with B-Tree data structure are composite consisting of `user_id`, `start_time`, and `duration` columns in sequence on the `user_sleeps` table, by the version [20250921155004](db/migrate/20250921155004_add_composite_index_to_user_sleeps.rb) of database migration.
 
-- Establishing the composite index (`user_id`, `start_time`, `duration`) will resolve the pagination overflow issue. Every time the page hits the last page, then a full scan will not occur, meven though data has accumulated over the years, queries will always have limits, returning only to recent data supported with data filters based on the indexed `start_time` column.
+- Establishing the composite index (`user_id`, `start_time`, `duration`) will resolve the pagination overflow issue. Every time the page arrives the last page, then a full scan will not occur, even though data has accumulated over the years, queries will always have limits, returning only to recent data supported with data filters based on the indexed `start_time` column.
 
-    Note that `user_id` is in front of the composite index because the current feature only displays data from each user, so the query used must use this column and it will remove the most of rows at the first execution. The `duration` column was added to the composite index in anticipation of the duration-based sorting feature.
+    Note that `user_id` is in front of the composite index because the current query only displays data from each user, so it must use this column and it will remove the most of rows at the first execution. The `duration` column was added to the composite index in anticipation of the duration-based sorting feature.
 
-- Adding a [Partial index](db/migrate/20250921174246_add_composite_partial_index_to_user_sleeps.rb) is to prevent nil `end_time` data included within the index data structure, which might reduce the filtering step, especially for displaying completed sleep with calculated duration. Covering index is also added once the `end_time` value is no longer nil, then the data will always be sent as a response.
+- Adding a [Partial index](db/migrate/20250921174246_add_composite_partial_index_to_user_sleeps.rb) is to prevent nil `end_time` data included within the indexing data structure. Which might reduce the filtering step, especially for returning completed sleep with calculated duration.
 
     I also demonstrated how to add the updated combosite partial index to a existing table with **zero down-time** using concurrent feature and disabling transaction during te migration.
 
-- In addition, I also added a [unique index](db/migrate/20250921000404_add_unique_index_to_follows.rb) for the (`follower_id`, `followed_id`) column because every time a followee is added, there will always be a check to prevent data duplication.
+- Covering index also was added once the `end_time` value is no longer nil, then the data will always be sent as a response.
 
-- The list sleeps with time range-based filerting already enhanced by the specific composite index that only consists of (`start_time`, `duration`) as I have added by the version [20250924232720](db/migrate/20250924232720_add_split_composite_partial_index_to_user_sleeps.rb) of database migration.
+- In addition, I also added the [unique index](db/migrate/20250921000404_add_unique_index_to_follows.rb) on the (`follower_id`, `followed_id`) column because every time a followee is added, there will always be a check to prevent data duplication.
+
+- The list sleeps with time range-based filtering is enhanced by the specific composite index that only consists of (`start_time`, `duration`) which has been added by the version [20250924232720](db/migrate/20250924232720_add_split_composite_partial_index_to_user_sleeps.rb) of database migration.
 
 #### Data Partitioning
 
-- Database effort can be minimized by deleting or separating irrelevant data from the primary database or source table every day using a scheduler.
+- Database effort can be minimized by deleting or separating irrelevant data from the primary database or source table periodically through a scheduling mechanism.
 
 - Another option is to maintain a persistent view that only stores relevant data to the query. That's why I chose to use PostgreSQL, which provides a physical view table that can be used for this option, called a **Materialized View**.
 
@@ -370,9 +372,11 @@ There are two things that optimizing the throughput of a single-node database li
     Execution Time: 17.076 ms
     ```
 
-    From the analysis, I have known that as the number of followers increases, it becomes less important to index `user_id` column that correlating to followed ids on the `user_sleeps` table, the database always prefer to avoid accessing index repeatedly.
+    From the analysis, I have known that as the number of followers increases, it becomes less important to index `user_id` column that correlating to followed ids on the `user_sleeps` table, because the database always prefer to avoid accessing index repeatedly to retrieve compound data.
 
-    That's why I have added the materialized view table with the intention of optimizing the index usage and reducing the nested joins query that overloads the database every time the user accesses the sleep followees data. Through the view table, query retrieval can be done without extensive table joins because it already stores the required data in a precomputed view. This strategy is called **Denormalization**. An overview of this table is shown in the figure below.
+    That's why I have added the materialized view table with the intention of optimizing the index usage and reducing the nested joins query that overloads the database every time the user accesses the followee's sleeps data. Through the view table, query retrieval can be done without extensive table joins because it already stores the required data in a precomputed view. This strategy is called **Denormalization**.
+
+    An overview of this table is shown in the figure below.
 
     <img width="50%" alt="Sleepbook MV" src="https://github.com/user-attachments/assets/5382b0d1-fdc9-42f4-b2ca-bc81911e6be5" />
 
@@ -396,20 +400,36 @@ There are two things that optimizing the throughput of a single-node database li
     Execution Time: 12.912 ms
     ```
 
-    This approach enables endpoints to handle significantly larger amounts of data with decreasing response latency, which would substantially increase throughput (to be confirmed through [performance tests](#performnace-testing)).
+    This approach enables server to handle significantly larger amounts of data with decreasing response latency, which would substantially increase throughput (to be confirmed through [performance tests](#performnace-testing)).
 
     | State | Total | Views | ActiveRecord | GC |
     | ------ | ---- | ------ | ---------------------------- | ----- |
     | Before | 97ms | 33.9ms | 55.6ms (4 queries, 0 cached) | 11.0ms |
     | After (MV)  | 35ms | 15.4ms | 15.9ms (4 queries, 0 cached) | 0.0ms |
 
-    It should also be noted that I have added indexing to the materialized view table, including a composite index unique (`follower_id`, `sleep_id`) and an ordered (`follower_id`, `duration`), so that performance will be more effective even if there is more data.
+    It should also be noted that I have added indexing to the materialized view table, including a composite index on unique (`follower_id`, `sleep_id`) and an ordered index on (`follower_id`, `duration`), so that performance will be more effective even if there is more data.
 
     However, this approach still has trade-offs. Depending on the SLA, the data will not always be consistent with the source table; scheduling can be organized based on this. For now, I set the scheduling every 5 minutes, assuming about 7000 incoming data in that period, following the calculation [previously](#traffic-estimation)
 
 - Another approach that can be made is to store data in Redis as a cache. Especially if the system needs to provide leaderboard data of sleep duration for all users. The list of top users can be stored in Sorted Sets Redis as the fastest source of truth through an event-sourcing architecture.
 
 ## Performnace Testing
+
+### Scenarions
+
+Setup 10 created users with zero followee
+
+#### User Followings
+
+Run 10 VUs to create and follow a user with ID 1 - 500
+
+#### User Recent Followee Sleeps
+
+Run 10 VUs to hit followee sleeps endpoint
+
+#### Followee sleeps
+
+Run 500 VUs to create completed sleeps
 
 <!-- This README would normally document whatever steps are necessary to get the
 application up and running.

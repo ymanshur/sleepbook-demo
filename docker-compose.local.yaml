@@ -1,0 +1,60 @@
+services:
+  backend:
+    build: .
+    working_dir: /app
+    environment:
+      - DATABASE_URL=postgres://root:secret@postgres:5432/sleepbook_demo_production
+      - REDIS_URL=redis://redis:6379/0
+      - RAILS_MASTER_KEY=da8be2c06dc33b7ab5c44e4f8a28ba64
+    volumes:
+      - .:/app
+    ports:
+      - 3000:3000
+    depends_on:
+      - postgres
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: 1
+          memory: 1024M
+
+  sidekiq:
+    build: .
+    command: ["bundle", "exec", "sidekiq"]
+    environment:
+      - RAILS_ENV=production
+      - REDIS_URL=redis://redis:6379/0
+      - RAILS_MASTER_KEY=da8be2c06dc33b7ab5c44e4f8a28ba64
+    depends_on:
+      - redis
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: 0.2
+          memory: 128M
+
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=sleepbook_demo_production
+    deploy:
+      resources:
+        limits:
+          cpus: 0.5
+          memory: 512M
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - 6379:6379
+    deploy:
+      resources:
+        limits:
+          cpus: 0.2
+          memory: 128M

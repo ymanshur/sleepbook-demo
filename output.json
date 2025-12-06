@@ -1,0 +1,161 @@
+[
+  {
+    "Plan": {
+      "Node Type": "Sort",
+      "Parallel Aware": false,
+      "Async Capable": false,
+      "Startup Cost": 23647.41,
+      "Total Cost": 24039.05,
+      "Plan Rows": 156653,
+      "Plan Width": 52,
+      "Actual Startup Time": 147.710,
+      "Actual Total Time": 168.142,
+      "Actual Rows": 157666,
+      "Actual Loops": 1,
+      "Sort Key": ["user_sleeps.duration DESC", "user_sleeps.id"],
+      "Sort Method": "external merge",
+      "Sort Space Used": 10224,
+      "Sort Space Type": "Disk",
+      "Plans": [
+        {
+          "Node Type": "Hash Join",
+          "Parent Relationship": "Outer",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Join Type": "Inner",
+          "Startup Cost": 45.42,
+          "Total Cost": 4775.44,
+          "Plan Rows": 156653,
+          "Plan Width": 52,
+          "Actual Startup Time": 0.673,
+          "Actual Total Time": 53.470,
+          "Actual Rows": 157666,
+          "Actual Loops": 1,
+          "Inner Unique": true,
+          "Hash Cond": "(user_sleeps.user_id = users.id)",
+          "Plans": [
+            {
+              "Node Type": "Hash Join",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Join Type": "Inner",
+              "Startup Cost": 27.18,
+              "Total Cost": 4342.56,
+              "Plan Rows": 156627,
+              "Plan Width": 60,
+              "Actual Startup Time": 0.250,
+              "Actual Total Time": 36.156,
+              "Actual Rows": 157666,
+              "Actual Loops": 1,
+              "Inner Unique": true,
+              "Hash Cond": "(user_sleeps.user_id = follows.followed_id)",
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "user_sleeps",
+                  "Alias": "user_sleeps",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 3896.95,
+                  "Plan Rows": 157916,
+                  "Plan Width": 52,
+                  "Actual Startup Time": 0.012,
+                  "Actual Total Time": 15.698,
+                  "Actual Rows": 157988,
+                  "Actual Loops": 1,
+                  "Filter": "((end_time IS NOT NULL) AND (start_time >= '2025-09-14 17:00:00'::timestamp without time zone))",
+                  "Rows Removed by Filter": 488
+                },
+                {
+                  "Node Type": "Hash",
+                  "Parent Relationship": "Inner",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 20.98,
+                  "Total Cost": 20.98,
+                  "Plan Rows": 496,
+                  "Plan Width": 8,
+                  "Actual Startup Time": 0.205,
+                  "Actual Total Time": 0.206,
+                  "Actual Rows": 499,
+                  "Actual Loops": 1,
+                  "Hash Buckets": 1024,
+                  "Original Hash Buckets": 1024,
+                  "Hash Batches": 1,
+                  "Original Hash Batches": 1,
+                  "Peak Memory Usage": 28,
+                  "Plans": [
+                    {
+                      "Node Type": "Index Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Scan Direction": "Forward",
+                      "Index Name": "index_follows_on_follower_id",
+                      "Relation Name": "follows",
+                      "Alias": "follows",
+                      "Startup Cost": 0.29,
+                      "Total Cost": 20.98,
+                      "Plan Rows": 496,
+                      "Plan Width": 8,
+                      "Actual Startup Time": 0.060,
+                      "Actual Total Time": 0.143,
+                      "Actual Rows": 499,
+                      "Actual Loops": 1,
+                      "Index Cond": "(follower_id = 1)",
+                      "Rows Removed by Index Recheck": 0
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "Node Type": "Hash",
+              "Parent Relationship": "Inner",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Startup Cost": 12.00,
+              "Total Cost": 12.00,
+              "Plan Rows": 500,
+              "Plan Width": 8,
+              "Actual Startup Time": 0.374,
+              "Actual Total Time": 0.375,
+              "Actual Rows": 500,
+              "Actual Loops": 1,
+              "Hash Buckets": 1024,
+              "Original Hash Buckets": 1024,
+              "Hash Batches": 1,
+              "Original Hash Batches": 1,
+              "Peak Memory Usage": 28,
+              "Plans": [
+                {
+                  "Node Type": "Seq Scan",
+                  "Parent Relationship": "Outer",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Relation Name": "users",
+                  "Alias": "users",
+                  "Startup Cost": 0.00,
+                  "Total Cost": 12.00,
+                  "Plan Rows": 500,
+                  "Plan Width": 8,
+                  "Actual Startup Time": 0.054,
+                  "Actual Total Time": 0.304,
+                  "Actual Rows": 500,
+                  "Actual Loops": 1
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "Planning Time": 3.553,
+    "Triggers": [
+    ],
+    "Execution Time": 172.703
+  }
+]
